@@ -1,6 +1,8 @@
 package constants
 
 import (
+	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -57,7 +59,32 @@ var (
 	Space   = []byte{' '}
 )
 
+var prodOrigins = []string{
+	"http://localhost:8091",
+	"127.0.0.1:8092",
+}
+
+var devOrigins = []string{
+	"http://localhost",
+}
+
 var Upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		origin := r.Header.Get("origin")
+		origins := func() []string {
+			if os.Getenv("GIN_MODE") == "debug" {
+				return devOrigins
+			} else {
+				return prodOrigins
+			}
+		}()
+		for _, allowOrigin := range origins {
+			if origin == allowOrigin {
+				return true
+			}
+		}
+		return true // TODO: ORIGIN CHECK
+	},
 }

@@ -44,6 +44,11 @@ func initAndRunServer(hub *Hub) {
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(200, "index.html", nil)
 	})
+
+	router.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "pong!"})
+	})
+
 	router.GET("/ws/:roomId", func(c *gin.Context) {
 		roomId := c.Param("roomId")
 		serveWs((*cons.Hub)(hub), c.Writer, c.Request, roomId)
