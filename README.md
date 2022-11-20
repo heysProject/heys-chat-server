@@ -1,2 +1,2 @@
 # heys-chat-server
-Golang websocket server
+Golang MQTT Publish server
