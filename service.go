@@ -15,7 +15,7 @@ func publishChat(dto ChatPublishDTO, roomId string) bool {
 			Message:   dto.Message,
 			WritterId: dto.WritterId,
 			Topic:     dto.Topic,
-			Reaction:  map[string]string{},
+			Reaction:  []ChatReactionEntity{},
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 			RemovedAt: time.Now(),
