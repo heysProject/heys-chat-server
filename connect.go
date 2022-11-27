@@ -15,7 +15,7 @@ var (
 	devBroker = "node1.emqx.io"
 	port      = 1883
 
-	clientId = "go_mqtt_client"
+	clientId = "go_mqtt_client" // most global unique id
 	username = "emqx_publisher"
 	password = "public"
 )
@@ -53,10 +53,12 @@ func connectMqtt() {
 		panic(token.Error())
 	}
 
-	// // TEST Subcribe
+	// TEST Subcribe
 	topic := "test/1" + "/" + "1"
 	fmt.Println("Subscribing to topic: ", topic)
-	token2 := mqttClient.Subscribe(topic, 1 /* QoS Level */, nil)
+	token2 := mqttClient.Subscribe(topic, 1 /* QoS Level */, func(c mqtt.Client, m mqtt.Message) {
+		fmt.Printf("[Received message]: %s from topic: %s\n", m.Payload(), m.Topic())
+	})
 	if token2.Wait() {
 		fmt.Println("subcribe success")
 	}

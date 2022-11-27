@@ -4,32 +4,18 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-type ChatPublishDTO struct {
-	Topic   string `json:"topic"`
-	Message string `json:"message"`
-	UserId  string `json:"userId"`
-}
-
-type ChatMessage struct {
-	ID       string `json:"_id,omitempty" bson:"_id,omitempty"`
-	FullText string `json:"full_text,omitempty" bson:"full_text,omitempty"`
-	UserId   string `json:"user_id,omitempty" bson:"user_id,omitempty"`
-}
-
 func route(router *gin.Engine) {
 	router.GET("/", func(c *gin.Context) {
-		// c.HTML(200, "index.html", nil)
 		c.JSON(http.StatusOK, gin.H{"message": "go chat server"})
 	})
 
 	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "pong!"})
+		c.JSON(http.StatusOK, gin.H{"message": "chat server: pong!"})
 	})
 
 	router.GET("/chats", func(c *gin.Context) {
@@ -50,6 +36,7 @@ func route(router *gin.Engine) {
 
 	router.POST("/publish/:roomId", func(c *gin.Context) {
 		var dto ChatPublishDTO
+
 		if err := c.ShouldBindJSON(&dto); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -59,28 +46,11 @@ func route(router *gin.Engine) {
 
 		fmt.Println("Topic: ", dto.Topic+"/"+roomId)
 
-		// publish msg to broker
-		token := mqttClient.Publish(dto.Topic+"/"+roomId, 0 /* QoS Level */, false, dto.Message)
-
-		if token.Wait() {
-			chat := ChatMessage{
-				FullText: dto.Message,
-				UserId:   dto.UserId,
-			}
-
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-
-			chatModel.InsertOne(ctx, bson.D{
-				{Key: "message", Value: chat.FullText},
-				{Key: "userId", Value: chat.UserId},
-			})
-
-			c.JSON(http.StatusOK, gin.H{"message": "success"})
-			return
+		if publishChat(dto, roomId) {
+			c.JSON(http.StatusOK, gin.H{"message": "message sent"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "message not sent"})
 		}
-
-		c.JSON(http.StatusOK, gin.H{"message": "failed"})
 	})
 
 	router.Run()

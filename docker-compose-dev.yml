@@ -15,13 +15,26 @@ services:
     networks:
       - chat
 
+  mongo: # only using development
+    image: mongo
+    restart: always
+    container_name: mongo
+    ports:
+      - 27017:27017 # output:input
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 1234
+    volumes:
+      - ./data/mongo:/data/db
+    networks:
+      - chat
+
   emqx1:
     image: emqx/emqx:5.0.10
     container_name: emqx1
     environment:
       - "EMQX_CLUSTER__DISCOVERY_STRATEGY=static"
       - "EMQX_CLUSTER__STATIC__SEEDS=[emqx@node1.emqx.io]"
-      # - "EMQX_CLUSTER__STATIC__SEEDS=[emqx@node1.emqx.io,emqx@node2.emqx.io]"
       - "EMQX_NAME=emqx"
       - "EMQX_HOST=node1.emqx.io"
     healthcheck:
@@ -29,8 +42,6 @@ services:
       interval: 5s
       timeout: 25s
       retries: 5
-    # volumes: # TODO: EMQX cluster auth (grant permission publish/subscribe)
-    #   - ./emqx/emqx_auth_username.conf:/opt/emqx/etc/plugins/emqx_auth_username.conf
     ports:
       - 1883:1883
       - 18083:18083 # dashboard
@@ -38,24 +49,6 @@ services:
       chat:
         aliases:
         - node1.emqx.io
-
-  # emqx2: # using nginx 'stream' loadbalancing, so no need to run 2 emqx
-  #   image: emqx/emqx:5.0.10
-  #   container_name: emqx2
-  #   environment:
-  #     - "EMQX_CLUSTER__DISCOVERY_STRATEGY=static"
-  #     - "EMQX_CLUSTER__STATIC__SEEDS=[emqx@node1.emqx.io,emqx@node2.emqx.io]"
-  #     - "EMQX_NAME=emqx"
-  #     - "EMQX_HOST=node2.emqx.io"
-  #   healthcheck:
-  #     test: ["CMD", "/opt/emqx/bin/emqx_ctl", "status"]
-  #     interval: 5s
-  #     timeout: 25s
-  #     retries: 5
-  #   networks:
-  #     chat:
-  #       aliases:
-  #       - node2.emqx.io
 
   chat-server:
     build:
@@ -65,14 +58,16 @@ services:
     container_name: chat-server
     environment:
       PORT: 8091
-      GIN_MODE: release
-      MONGO_URI: ${MONGO_DB_URI}
+      GIN_MODE: debug
+      MONGO_URI: mongodb://root:1234@mongo:27017
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 1234
     volumes:
       - .:/app
     command: /main
     depends_on:
+      - mongo
       - emqx1
-      # - emqx2
     networks:
       - chat
 
