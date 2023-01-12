@@ -17,4 +17,5 @@
 .env
 .vscode/
 data/
+emqx/
 test-client/node_modules

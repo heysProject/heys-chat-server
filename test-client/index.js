@@ -28,7 +28,19 @@ client.on("connect", function () {
     }
   });
 
-  client.publish(topic, "Hello mqtt");
+  let count = 0;
+  while(count < 5) {
+    setTimeout(() => {
+      client.publish(topic, "Hello mqtt");
+    }, count * 2000)
+    count++;
+  }
+
+  if (count === 5) {
+    setTimeout(() => {
+      client.end();
+    }, count * 2000)
+  }
 });
 
 client.on("message", function (topic, message) {

@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func publishChat(dto ChatPublishDTO, roomId string) bool {
@@ -30,4 +33,17 @@ func publishChat(dto ChatPublishDTO, roomId string) bool {
 	}
 
 	return false
+}
+
+func getChatMessages(topic string) []bson.M {
+	var chatMessages []bson.M
+
+	cursor, err := chatModel.Find(context.TODO(), bson.M{})
+
+	if err = cursor.All(context.TODO(), &chatMessages); err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	return chatMessages
 }
